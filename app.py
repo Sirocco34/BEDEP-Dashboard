@@ -4,9 +4,10 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 
-# --- Veriyi Oku ---
+# Veriyi oku
 df = pd.read_excel('AI_Rapor.xlsx', sheet_name="Sayfa1")
 
+# Alanlar
 alanlar = [
     'Okuma Becerileri',
     'Fen Okuryazarlığı',
@@ -15,41 +16,45 @@ alanlar = [
     'Finansal Okuryazarlık'
 ]
 
+# "G" hariç filtrele
 for alan in alanlar:
     df = df[df[alan] != "G"]
     df[alan] = pd.to_numeric(df[alan], errors='coerce')
 
+# Yeterlik düzeyleri
 mapping = {0: "Temel Altı", 1: "Temel", 2: "Orta", 3: "Üst", 4: "İleri"}
 
+# Okul listesi
 okul_listesi = df['Okul'].unique().tolist()
 okul_listesi.sort()
 okul_options = [{'label': okul, 'value': okul} for okul in okul_listesi]
 okul_options.insert(0, {'label': 'Tüm Okullar', 'value': 'Tüm Okullar'})
 
+# Dash uygulaması
 app = dash.Dash(__name__)
+server = app.server  # GEREKLİ! Render için bu olmalı ✅
 
+# Arayüz
 app.layout = html.Div([
     html.H1('BEDEP 5. Sınıf Dashboard', style={'textAlign': 'center', 'marginBottom': '30px'}),
 
     html.Div([
-        html.Div([
-            html.Label('Alan Seçimi:', style={'fontWeight': 'bold'}),
-            dcc.Dropdown(
-                id='alan-secimi',
-                options=[{'label': alan, 'value': alan} for alan in alanlar],
-                value='Okuma Becerileri',
-                style={'marginBottom': '30px'}
-            ),
-            html.Label('Okul Seçimi:', style={'fontWeight': 'bold'}),
-            dcc.Dropdown(
-                id='okul-secimi',
-                options=okul_options,
-                value='Tüm Okullar',
-                style={'marginBottom': '30px'}
-            ),
-            html.H3(id='toplam-ogrenci', style={'marginTop': '30px', 'textAlign': 'center'})
-        ], style={'width': '100%', 'padding': '10px', 'marginBottom': '40px'}),
-    ]),
+        html.Label('Alan Seçimi:', style={'fontWeight': 'bold'}),
+        dcc.Dropdown(
+            id='alan-secimi',
+            options=[{'label': alan, 'value': alan} for alan in alanlar],
+            value='Okuma Becerileri',
+            style={'marginBottom': '30px'}
+        ),
+        html.Label('Okul Seçimi:', style={'fontWeight': 'bold'}),
+        dcc.Dropdown(
+            id='okul-secimi',
+            options=okul_options,
+            value='Tüm Okullar',
+            style={'marginBottom': '30px'}
+        ),
+        html.H3(id='toplam-ogrenci', style={'marginTop': '30px', 'textAlign': 'center'})
+    ], style={'width': '100%', 'padding': '10px', 'marginBottom': '40px'}),
 
     html.Div([
         dcc.Graph(id='genel-grafik', style={'width': '48%', 'display': 'inline-block', 'marginRight': '2%'}),
@@ -57,6 +62,7 @@ app.layout = html.Div([
     ], style={'display': 'flex', 'justifyContent': 'center'})
 ])
 
+# Callback
 @app.callback(
     [Output('genel-grafik', 'figure'),
      Output('okul-grafik', 'figure'),
@@ -116,6 +122,3 @@ def update_graphs(selected_area, selected_school):
     toplam_text = f"Toplam Öğrenci Sayısı: {toplam_ogrenci}"
 
     return genel_fig, okul_fig, toplam_text
-
-if __name__ == '__main__':
-    app.run_server(debug=True, host="0.0.0.0", port=8080)
